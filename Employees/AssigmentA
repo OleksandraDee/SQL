@@ -1,0 +1,171 @@
+--Assigment A
+
+--Request 1 --->
+--List the last name,first name and employee number of all programmers who
+--were hired on or before 21 May 1991 sortedin ascending order of last name.
+SELECT E.Last_Name, E.First_Name, E.Employee_No FROM Employees E
+	INNER JOIN Jobs J ON J.Job_ID = E.Job_ID
+	INNER JOIN Job_History JH ON JH.Employee_No = E.Employee_No
+	WHERE E.Hire_Date >= '05-21-1991' 
+ORDER BY E.Last_Name, E.First_Name, E.Employee_No ASC
+
+
+--Request 2 --->
+--List the department number, last name and salary of all employees who were
+--hired between 16/09/87 and 12/05/96 sortedin ascending order of last name 
+--within department number.
+SELECT E.Last_Name, E.Annual_Salary, E.Hire_Date, D.Department_Name FROM Employees E
+	INNER JOIN Departments D ON D.Department_No = E.Department_No
+	WHERE E.Hire_Date >= '12-09-1987' AND E.Hire_Date <= '12-05-1996'
+ORDER BY D.Department_Name, E.Last_Name ASC
+
+
+--Request 3 --->
+--List all the data for all jobs where the maximumsalary is greater than 15000
+--sorted in descending orderof the maximum salary.
+SELECT * FROM Jobs J
+	WHERE J.Max_Salary > 15000
+ORDER BY J.Max_Salary DESC
+
+--Request 4 --->
+--List the last name, first name, job id and commission of employees who earn
+--commission sortedin ascending order of first name within last name.
+SELECT E.First_Name, E.Last_Name, E.Job_ID, E.Commission_Percent FROM Employees E
+	WHERE E.Commission_Percent IS NOT NULL
+ORDER BY E.First_Name, E.Last_Name ASC
+
+--Request 5 --->
+--Which jobs are found in the IT and Sales departments? 
+SELECT DISTINCT D.Department_Name, J.Job_Title FROM Departments D
+	INNER JOIN Employees E ON E.Department_No = D.Department_No
+	INNER JOIN Jobs J ON J.Job_ID = E.Job_ID
+	WHERE D.Department_Name = 'IT' OR D.Department_Name = 'Sales'
+
+
+--Request 6 List the last name of all employees in departments 50 and 90 together with their
+--monthly salaries (roundedto 2 decimal places), sortedin ascending order of last 
+--name.
+SELECT E.Last_Name, D.Department_No, CAST(ROUND(E.Annual_Salary / 12, 2) AS MONEY) AS Monthly_Salary 
+FROM Employees E
+	INNER JOIN Departments D ON D.Department_No = E.Department_No
+	WHERE D.Department_No = 50 OR D.Department_No = 90
+ORDER BY E.Last_Name ASC
+
+--Request 7 --->
+--Show the total salaries figure for one month displayed with no decimalplaces 
+SELECT CAST((SUM(Annual_Salary)/12) as int) as Monthly_Salary_Total
+from Employees
+
+--Request 8 --->
+--Show the total number of employees.
+SELECT COUNT(E.Employee_No) AS Total_Number_Of_Employees 
+FROM Employees E
+
+--Request 9 --->
+--List the department number, department name and the number of
+--employees for each department that has more than 2 employees grouping 
+--by department numberand department name.
+SELECT D.Department_No, D.Department_Name, COUNT(E.Employee_No) as Total_Employees
+FROM Employees E
+	INNER JOIN Departments D ON D.Department_No = E.Department_No
+	GROUP BY Department_Name, d.Department_No
+HAVING COUNT(*) > 2
+
+--Request 10 --->
+--List the department number, department name and the number of
+--employees for the department that has the highest number of employees 
+--using appropriate grouping.
+SELECT TOP 1 D.Department_No, Department_Name, COUNT(*) AS Total_Employees
+FROM Departments D, Employees E
+	WHERE D.Department_No=E.Department_No
+GROUP BY Department_Name, D.Department_No
+HAVING COUNT(*) > 2
+ORDER BY Total_Employees DESC
+
+
+
+--Request 11 --->
+--List the department numberand name for all departments where no
+--programmers work.
+SELECT Department_No, Department_Name FROM Departments 
+WHERE Department_No != 
+(
+	SELECT DISTINCT D.Department_No FROM Departments D
+	INNER JOIN Employees E ON E.Department_No = D.Department_No
+	INNER JOIN Jobs J ON J.Job_ID = E.Job_ID
+	WHERE J.Job_Title = 'Programmer'
+)
+
+--Request 12 --->
+--Add the following newjob
+--IT_ANAL, SystemAnalyst, 10000, 15000
+INSERT INTO Jobs(Job_ID, Job_Title, Min_Salary,Max_Salary)
+	VALUES('IT_ANAL', 'SystemAnalyst', 10000, 15000)
+
+--Request 13 --->
+--Update all the maximum salaries for jobs with an increase of 1000.
+UPDATE Jobs 
+	SET Max_Salary = (Min_Salary+1000)
+
+--Request 14 --->
+--List all the data for jobs sorted in ascending order of job id.
+SELECT * FROM Jobs
+ORDER BY Job_ID ASC
+
+--Request 15 -->
+--a) The job history for employee number102 is no longer required.
+--Delete this record.
+--b) List all the data for job history sortedin ascending order of
+--employee number.
+--a
+delete from Job_History
+where Employee_No = 102
+
+--b
+SELECT * FROM Job_History
+ORDER BY Employee_No ASC
+
+--Request 16 --->
+--Produce a list of employees showing percentage raises, employee numbers
+--and old and new salaries. Employees in departments 20 and 10 are given a
+--5% rise, employees in departments 50, 80, 90 and 110 are given a 10% rise 
+--and employees in otherdepartments are not given a rise.
+SELECT 
+	CASE 
+		WHEN Department_No = 10  OR Department_No = 20 THEN '5% rise'
+		WHEN Department_No = 50 OR Department_No = 80 OR Department_No = 90 OR Department_No = 110  
+		THEN '10% rise'
+		ELSE '0% rise'
+	END AS Percentage_Raise, Employee_No, Annual_Salary AS Old_Salary,
+	CASE 
+		WHEN department_No = 10  OR department_No = 20 THEN Annual_Salary * 1.05
+		WHEN department_No =50 OR department_No = 80 OR department_No = 90 OR Department_No = 110 
+		THEN Annual_Salary * 1.10
+		ELSE Annual_Salary * 1
+	END AS New_Salary FROM Employees
+
+--Request 17 --->
+--Create a new view for manager’s details only using all the fields from the
+--employee table. Apply a CHECK constraint.
+CREATE VIEW ManagerView AS
+	SELECT * FROM Employees
+	WHERE Job_ID LIKE '%MGR'
+WITH CHECK OPTION
+	
+
+--Request 18 --->
+--Show all the fields and all the managers using the view 
+--for managers sorted
+--in ascending order of employee number.
+SELECT * FROM ManagerView
+ORDER BY Employee_No ASC
+
+--Request 19 --->
+--Grant the authority to all other users to access the view for managers for
+--SELECT statements only.
+GRANT SELECT ON ManagerView TO PUBLIC
+
+--Request 20 Create an indexnamed LOC_POSTAL_CODE on the PostalCode in the
+--locations table.
+--Provide a printout showing tha the index has been created.
+CREATE INDEX LOC_POSTAL_CODE ON locations(Postal_Code)
